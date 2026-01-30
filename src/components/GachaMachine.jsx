@@ -46,7 +46,7 @@ export const GachaMachine = () => {
         
         {/* Machine Header */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black border-2 border-cyber-warning px-6 py-2 rounded-full shadow-neon-yellow z-20">
-            <span className="text-cyber-warning font-black text-xl tracking-widest">MATTER SYNTHESIZER</span>
+            <span className="text-cyber-warning font-black text-xl tracking-widest">物質合成儀</span>
         </div>
 
         {/* Display Area */}
@@ -66,13 +66,13 @@ export const GachaMachine = () => {
                          wonPrize.rarity === 'SR' ? 'border-cyber-secondary text-cyber-secondary' :
                          'border-cyber-primary text-cyber-primary'
                      }`}>
-                         {wonPrize.rarity} CLASS
+                         {wonPrize.rarity} 級物品
                      </div>
                  </div>
              ) : (
                  <div className="text-cyber-primary/30 font-mono text-sm">
-                     READY TO SYNTHESIZE<br/>
-                     INSERT ENERGY TO START
+                     系統準備就緒<br/>
+                     請注入能量啟動
                  </div>
              )}
         </div>
@@ -98,9 +98,9 @@ export const GachaMachine = () => {
             style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
         >
             <span className="relative z-10 flex items-center justify-center gap-3">
-                {isSpinning ? "SYNTHESIZING..." : (
+                {isSpinning ? "合成中..." : (
                     <>
-                        <span>SYNTHESIZE</span>
+                        <span>開始合成</span>
                         <div className="flex items-center text-sm bg-black/20 px-2 py-1 rounded">
                             <Zap size={14} className="fill-current" /> {COST_PER_SPIN}
                         </div>
@@ -115,7 +115,7 @@ export const GachaMachine = () => {
         
         {points < COST_PER_SPIN && (
             <p className="text-red-500 text-xs mt-4 font-mono">
-                ERROR: INSUFFICIENT ENERGY. REQUIRED: {COST_PER_SPIN}
+                錯誤：能量不足（需要 {COST_PER_SPIN}）
             </p>
         )}
       </div>
