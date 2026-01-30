@@ -49,6 +49,11 @@ export const QuizComponent = ({ quizData, onComplete, onExit }) => {
     }
   };
 
+  // 結束測驗的函數
+  const finishQuiz = () => {
+    setQuizFinished(true);
+  };
+
   const handleNext = () => {
     setSelectedOption(null);
     setShowResult(false);
@@ -60,23 +65,9 @@ export const QuizComponent = ({ quizData, onComplete, onExit }) => {
       finishQuiz();
     }
   };
-
-  const finishQuiz = () => {
-    setQuizFinished(true);
-    // Use the latest state for score calculation? 
-    // Wait, the state update is async. But here we are just setting quizFinished.
-    // The render will pick up the score state.
-    // However, the logic for adding points should be in an effect or called here carefully.
-    // Since I updated score in handleSubmit, and this is called in handleNext (next render),
-    // score should be up to date for the logic *inside the render* or a separate effect.
-    // But let's calculate points in a dedicated function triggered by the user "Claim Reward".
-  };
   
   const handleClaimReward = () => {
-      // Bonus points for perfect score (100 total for perfect, otherwise 10 per question?)
-      // User requirement: "測驗全對可獲得 100 點能量點數" (Perfect score = 100 points)
-      // Let's say partial credit is standard 10 per q.
-      
+      // 計算獎勵點數：全對 100 點，否則一題 10 點
       let totalPoints = 0;
       if (score === quizData.length) {
           totalPoints = 100;
@@ -87,7 +78,7 @@ export const QuizComponent = ({ quizData, onComplete, onExit }) => {
       addPoints(totalPoints);
       
       if (score === quizData.length) {
-           confetti({
+            confetti({
             particleCount: 200,
             spread: 160,
             origin: { y: 0.6 },
@@ -98,6 +89,7 @@ export const QuizComponent = ({ quizData, onComplete, onExit }) => {
       onComplete(score === quizData.length);
   };
 
+  // 顯示結算畫面
   if (quizFinished) {
       const isPerfect = score === quizData.length;
       return (
@@ -200,8 +192,9 @@ export const QuizComponent = ({ quizData, onComplete, onExit }) => {
                     <div className={`font-black text-xl italic ${isCorrect ? 'text-cyber-success' : 'text-cyber-accent'}`}>
                         {isCorrect ? "ACCESS GRANTED" : "ACCESS DENIED"}
                     </div>
+                    {/* 這裡就是原本報錯的地方，我已經改成正確的 finishQuiz 了 */}
                     <button 
-                        onClick={currentQuestionIndex < quizData.length - 1 ? handleNext : handleFinish}
+                        onClick={currentQuestionIndex < quizData.length - 1 ? handleNext : finishQuiz}
                         className="bg-white text-black font-black px-8 py-3 clip-path-polygon hover:bg-gray-200 transition-all flex items-center gap-2"
                         style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0% 100%)' }}
                     >
