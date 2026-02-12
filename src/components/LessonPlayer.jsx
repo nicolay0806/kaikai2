@@ -2,17 +2,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowRight, ArrowLeft, X, Terminal, CheckCircle, Loader2 } from 'lucide-react';
 import { QuizComponent } from './QuizComponent';
 
-// --- 題目製造機 (Math Engine) ---
+// --- 題目製造機 (Math Engine) v2.0 ---
 const generateDynamicQuiz = (lessonId) => {
   const questions = [];
-  const questionCount = 3;
+  const questionCount = 5; // 增加到 5 題，提升訓練感
 
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   
+  // 智慧干擾生成：根據答案大小產生看起來很像的錯誤選項
   const generateOptions = (answer) => {
     const opts = new Set([answer]);
     while (opts.size < 4) {
-      let fake = answer + rand(-50, 50);
+      let fake;
+      const strategy = rand(0, 2);
+      if (strategy === 0) fake = answer + rand(-10, 10); // 微小誤差
+      else if (strategy === 1) fake = answer + (rand(0, 1) === 0 ? 100 : -100); // 整百誤差
+      else fake = answer + (rand(0, 1) === 0 ? 1000 : -1000); // 整千誤差 (針對千位數)
+
       if (fake > 0 && fake !== answer) opts.add(fake);
     }
     return Array.from(opts).sort(() => Math.random() - 0.5); 
@@ -20,80 +26,87 @@ const generateDynamicQuiz = (lessonId) => {
 
   for (let i = 0; i < questionCount; i++) {
     let q = {};
+    
+    // --- U1~U4 保留原有邏輯並微調 ---
     if (lessonId.includes('u1')) {
        if (lessonId.includes('l1')) {
           const num = rand(100, 999);
           const type = rand(0, 2);
           const places = ['百位', '十位', '個位'];
           const values = [Math.floor(num/100), Math.floor((num%100)/10), num%10];
-          q = {
-            question: `數字 ${num} 的「${places[type]}」數字是多少？`,
-            answerVal: values[type],
-            options: [values[type], rand(0,9), rand(0,9), rand(0,9)].sort(() => Math.random() - 0.5),
-            answer: 0
-          };
           const correctVal = values[type];
           const distractorSet = new Set([correctVal]);
           while(distractorSet.size < 4) distractorSet.add(rand(0, 9));
-          q.options = Array.from(distractorSet).sort(() => Math.random() - 0.5);
-          q.answer = q.options.indexOf(correctVal);
-       } else {
-          const n1 = rand(100, 500);
-          const n2 = rand(100, 400);
-          const ans = n1 + n2;
-          const opts = generateOptions(ans);
+          const opts = Array.from(distractorSet).sort(() => Math.random() - 0.5);
           q = {
-            question: `${n1} + ${n2} = ?`,
+            question: `數字 ${num} 的「${places[type]}」數字是多少？`,
             options: opts.map(String),
-            answer: opts.indexOf(ans)
+            answer: opts.indexOf(correctVal)
           };
+       } else {
+          const n1 = rand(100, 500), n2 = rand(100, 400), ans = n1 + n2;
+          const opts = generateOptions(ans);
+          q = { question: `${n1} + ${n2} = ?`, options: opts.map(String), answer: opts.indexOf(ans) };
        }
     }
     else if (lessonId.includes('u2')) {
-       const n1 = rand(500, 900);
-       const n2 = rand(100, 400);
-       const ans = n1 - n2;
+       const n1 = rand(500, 900), n2 = rand(100, 400), ans = n1 - n2;
        const opts = generateOptions(ans);
-       q = {
-         question: `${n1} - ${n2} = ?`,
-         options: opts.map(String),
-         answer: opts.indexOf(ans)
-       };
+       q = { question: `${n1} - ${n2} = ?`, options: opts.map(String), answer: opts.indexOf(ans) };
     }
     else if (lessonId.includes('u3')) {
-       const n1 = rand(2, 9);
-       const n2 = rand(2, 9);
-       const ans = n1 * n2;
+       const n1 = rand(2, 9), n2 = rand(2, 9), ans = n1 * n2;
        const opts = generateOptions(ans);
-       q = {
-         question: `${n1} x ${n2} = ?`,
-         options: opts.map(String),
-         answer: opts.indexOf(ans)
-       };
+       q = { question: `${n1} x ${n2} = ?`, options: opts.map(String), answer: opts.indexOf(ans) };
     }
     else if (lessonId.includes('u4')) {
-       const n2 = rand(2, 9);
-       const ans = rand(2, 9); 
-       const n1 = n2 * ans; 
+       const n2 = rand(2, 9), ans = rand(2, 9), n1 = n2 * ans;
        const opts = generateOptions(ans);
+       q = { question: `${n1} ÷ ${n2} = ?`, options: opts.map(String), answer: opts.indexOf(ans) };
+    }
+    // --- 新增 U5: 千位數重裝任務 ---
+    else if (lessonId.includes('u5')) {
+       const isAdd = rand(0, 1) === 0;
+       let n1, n2, ans;
+       if (isAdd) {
+           n1 = rand(1000, 5000); n2 = rand(1000, 4000); ans = n1 + n2;
+           q.question = `[系統升級] 千位數運算：\n${n1} + ${n2} = ?`;
+       } else {
+           n1 = rand(5000, 9999); n2 = rand(1000, 4000); ans = n1 - n2;
+           q.question = `[系統升級] 千位數運算：\n${n1} - ${n2} = ?`;
+       }
+       const opts = generateOptions(ans);
+       q.options = opts.map(String);
+       q.answer = opts.indexOf(ans);
+    }
+    // --- 新增 U6: 邏輯解碼 (挖空題) ---
+    else if (lessonId.includes('u6')) {
+       const total = rand(2000, 9000);
+       const part = rand(1000, total - 500);
+       const unknown = total - part;
+       const opts = generateOptions(unknown);
        q = {
-         question: `${n1} ÷ ${n2} = ?`,
-         options: opts.map(String),
-         answer: opts.indexOf(ans)
+           question: `解碼未知訊號：\n${part} + [ ? ] = ${total}`,
+           options: opts.map(String),
+           answer: opts.indexOf(unknown)
        };
     }
+    // --- 混合模式 (當沒有匹配 ID 時執行) ---
     else {
-       const op = rand(0, 2);
+       const mode = rand(0, 4);
        let n1, n2, ans, symbol;
-       if (op === 0) { n1=rand(100,500); n2=rand(100,500); ans=n1+n2; symbol='+'; }
-       else if (op === 1) { n1=rand(500,900); n2=rand(100,400); ans=n1-n2; symbol='-'; }
-       else { n1=rand(2,20); n2=rand(2,5); ans=n1*n2; symbol='x'; }
+       if (mode === 0) { n1=rand(100,500); n2=rand(100,500); ans=n1+n2; symbol='+'; }
+       else if (mode === 1) { n1=rand(1000,4000); n2=rand(1000,4000); ans=n1+n2; symbol='+'; }
+       else if (mode === 2) { n1=rand(5000,9000); n2=rand(1000,4000); ans=n1-n2; symbol='-'; }
+       else if (mode === 3) { n1=rand(2,12); n2=rand(2,9); ans=n1*n2; symbol='x'; }
+       else { 
+           const target = rand(100, 900); n1 = rand(10, target-10); ans = target - n1;
+           const opts = generateOptions(ans);
+           q = { question: `${n1} + [ ? ] = ${target}`, options: opts.map(String), answer: opts.indexOf(ans) };
+           questions.push(q); continue;
+       }
        const opts = generateOptions(ans);
-       q = {
-         question: `${n1} ${symbol} ${n2} = ?`,
-         options: opts.map(String),
-         answer: opts.indexOf(ans)
-       };
+       q = { question: `${n1} ${symbol} ${n2} = ?`, options: opts.map(String), answer: opts.indexOf(ans) };
     }
     questions.push(q);
   }
@@ -208,7 +221,6 @@ export const LessonPlayer = ({ lesson, onComplete, onExit }) => {
                         <div className="absolute inset-0 bg-gradient-to-t from-cyber-bg to-transparent opacity-50"></div>
                      </div>
                  )}
-                 {/* 這裡是最重要的修改：加入 whitespace-pre-line 讓文字可以換行 */}
                  <p className="text-2xl md:text-4xl font-bold text-white leading-relaxed drop-shadow-lg whitespace-pre-line">
                      {slide.content}
                  </p>
@@ -217,7 +229,6 @@ export const LessonPlayer = ({ lesson, onComplete, onExit }) => {
 
          {slide.type === 'visual' && slide.visualType === 'place_value' && (
              <div className="space-y-8 w-full animate-in fade-in zoom-in duration-500">
-                 {/* 這裡也加了 whitespace-pre-line */}
                  <p className="text-2xl font-bold text-white mb-8 whitespace-pre-line">{slide.content}</p>
                  <div className="flex justify-center gap-8 items-end p-8 bg-black/30 rounded-xl border border-white/10">
                      <div className="flex flex-col items-center gap-2">
